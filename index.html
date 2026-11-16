@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#101B35">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop Management System</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f1f5f9;color:#1e293b}
+header{background:#123b70;color:white;text-align:center;padding:25px}header h1{margin:0;font-size:27px}
+.container{max-width:1100px;margin:auto;padding:15px}.card{background:white;padding:20px;border-radius:10px;margin:15px 0;box-shadow:0 2px 8px #0001}
+h2{color:#123b70;margin-top:0}input,select{padding:12px;width:100%;margin:7px 0 14px;border:1px solid #cbd5e1;border-radius:6px}
+button{padding:10px 15px;margin:3px;border:0;border-radius:6px;background:#1769aa;color:white;cursor:pointer}
+button:hover{background:#0e4778}.delete{background:#dc3545}.edit{background:#198754}
+.tabs{display:flex;flex-wrap:wrap;gap:5px}.tabs button{flex:1;min-width:100px}
+table{width:100%;border-collapse:collapse}th,td{padding:10px;border:1px solid #ddd;text-align:left}th{background:#123b70;color:white}
+.table-wrap{overflow-x:auto}.section{display:none}.section.active{display:block}.stat{background:#eaf2ff;padding:15px;border-radius:8px;margin:8px 0}
+footer{text-align:center;padding:20px;color:#64748b}
+</style>
+</head>
+<body>
+<header><h1>SHOP MANAGEMENT SYSTEM</h1><p>Created &amp; Developed by Glory</p><p>Product Inventory Dashboard</p></header>
+<div class="container">
+<div class="tabs">
+<button onclick="showSection('dashboard')">Dashboard</button><button onclick="showSection('products')">Products</button>
+<button onclick="showSection('purchase')">Purchases</button><button onclick="showSection('sales')">Sales</button>
+</div>
+<div id="dashboard" class="section active"><div class="card"><h2>Dashboard Summary</h2>
+<div class="stat" id="totalProducts"></div><div class="stat" id="totalStock"></div><div class="stat" id="stockValue"></div>
+<div class="stat" id="totalSales"></div><div class="stat" id="totalPurchases"></div></div>
+<div class="card"><h2>Low Stock Alerts</h2><div id="lowStock"></div></div></div>
+<div id="products" class="section"><div class="card"><h2>Add / Update Product</h2>
+<form id="productForm"><input id="pname" placeholder="Product Name" required>
+<input id="pprice" type="number" min="0.01" step="0.01" placeholder="Selling Price ₹" required>
+<input id="pcost" type="number" min="0" step="0.01" placeholder="Purchase Price ₹" required>
+<input id="pqty" type="number" min="0" step="1" placeholder="Opening Quantity" required>
+<input id="plimit" type="number" min="0" step="1" placeholder="Low Stock Alert Level (default 5)">
+<button id="saveProduct">Add Product</button><button type="button" onclick="resetProduct()">Clear</button></form><p id="productMsg"></p></div>
+<div class="card"><h2>Product Inventory</h2><input id="search" placeholder="Search product..." oninput="displayProducts()">
+<div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Price</th><th>Cost</th><th>Quantity</th><th>Actions</th></tr></thead><tbody id="productList"></tbody></table></div></div></div>
+<div id="purchase" class="section"><div class="card"><h2>Purchase / Stock In</h2>
+<form id="purchaseForm"><select id="purchaseProduct" required></select><input id="purchaseQty" type="number" min="1" step="1" placeholder="Purchase Quantity" required>
+<input id="purchaseCost" type="number" min="0" step="0.01" placeholder="Purchase Price per Unit ₹" required><button>Record Purchase</button></form><p id="purchaseMsg"></p></div>
+<div class="card"><h2>Purchase History</h2><div class="table-wrap"><table><thead><tr><th>Date</th><th>Product</th><th>Quantity</th><th>Unit Cost</th><th>Total</th></tr></thead><tbody id="purchaseList"></tbody></table></div></div></div>
+<div id="sales" class="section"><div class="card"><h2>Sales / Stock Out</h2>
+<form id="salesForm"><select id="salesProduct" required></select><input id="salesQty" type="number" min="1" step="1" placeholder="Quantity Sold" required>
+<input id="salesPrice" type="number" min="0.01" step="0.01" placeholder="Selling Price per Unit ₹" required><button>Record Sale</button></form><p id="salesMsg"></p></div>
+<div class="card"><h2>Sales History</h2><div class="table-wrap"><table><thead><tr><th>Date</th><th>Product</th><th>Quantity</th><th>Unit Price</th><th>Total</th></tr></thead><tbody id="salesList"></tbody></table></div></div></div>
+</div>
+<footer>Shop Management System | Offline Browser Demo<br>Created &amp; Developed by Glory</footer>
+<script>
+let products=JSON.parse(localStorage.getItem("gloryProducts"))||[];
+let purchases=JSON.parse(localStorage.getItem("gloryPurchases"))||[];
+let sales=JSON.parse(localStorage.getItem("glorySales"))||[];
+let editingId=null;
+function saveData(){localStorage.setItem("gloryProducts",JSON.stringify(products));localStorage.setItem("gloryPurchases",JSON.stringify(purchases));localStorage.setItem("glorySales",JSON.stringify(sales));}
+function showSection(id){document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));document.getElementById(id).classList.add("active");}
+function resetProduct(){document.getElementById("productForm").reset();editingId=null;document.getElementById("saveProduct").textContent="Add Product";}
+function displayProducts(){let q=document.getElementById("search").value.toLowerCase(),list=document.getElementById("productList");list.innerHTML="";
+products.filter(p=>p.name.toLowerCase().includes(q)).forEach(p=>{let tr=document.createElement("tr");[p.id,p.name,"₹"+Number(p.price).toFixed(2),"₹"+Number(p.cost).toFixed(2),p.qty].forEach(v=>{let td=document.createElement("td");td.textContent=v;tr.appendChild(td);});
+let td=document.createElement("td"),e=document.createElement("button");e.textContent="Edit";e.className="edit";e.onclick=()=>editProduct(p.id);let d=document.createElement("button");d.textContent="Delete";d.className="delete";d.onclick=()=>deleteProduct(p.id);td.append(e,d);tr.appendChild(td);list.appendChild(tr);});updateSelects();}
+document.getElementById("productForm").onsubmit=e=>{e.preventDefault();let name=document.getElementById("pname").value.trim(),price=Number(document.getElementById("pprice").value),cost=Number(document.getElementById("pcost").value),qty=Number(document.getElementById("pqty").value),limit=Number(document.getElementById("plimit").value||5);if(!name||price<=0||cost<0||qty<0||limit<0)return;
+if(editingId!==null){let p=products.find(x=>x.id===editingId);p.name=name;p.price=price;p.cost=cost;p.low=limit;p.qty=qty;}else products.push({id:Date.now(),name,price,cost,qty,low:limit});
+saveData();resetProduct();displayProducts();updateDashboard();document.getElementById("productMsg").textContent="Product saved successfully!";};
+function editProduct(id){let p=products.find(x=>x.id===id);document.getElementById("pname").value=p.name;document.getElementById("pprice").value=p.price;document.getElementById("pcost").value=p.cost;document.getElementById("pqty").value=p.qty;document.getElementById("plimit").value=p.low;editingId=id;document.getElementById("saveProduct").textContent="Update Product";showSection("products");}
+function deleteProduct(id){if(confirm("Delete this product?")){products=products.filter(p=>p.id!==id);saveData();displayProducts();updateDashboard();}}
+function updateSelects(){["purchaseProduct","salesProduct"].forEach(id=>{let sel=document.getElementById(id);sel.innerHTML="";products.forEach(p=>{let o=document.createElement("option");o.value=p.id;o.textContent=p.name+" (Stock: "+p.qty+")";sel.appendChild(o);});});}
+document.getElementById("purchaseForm").onsubmit=e=>{e.preventDefault();let p=products.find(x=>x.id==document.getElementById("purchaseProduct").value),q=Number(document.getElementById("purchaseQty").value),c=Number(document.getElementById("purchaseCost").value);if(!p||q<=0||c<0)return;p.qty+=q;p.cost=c;purchases.push({date:new Date().toLocaleString(),name:p.name,qty:q,cost:c,total:q*c});saveData();e.target.reset();displayProducts();displayPurchases();updateDashboard();document.getElementById("purchaseMsg").textContent="Purchase recorded and stock increased!";};
+document.getElementById("salesForm").onsubmit=e=>{e.preventDefault();let p=products.find(x=>x.id==document.getElementById("salesProduct").value),q=Number(document.getElementById("salesQty").value),price=Number(document.getElementById("salesPrice").value);if(!p||q<=0||price<=0)return;if(q>p.qty){document.getElementById("salesMsg").textContent="Insufficient stock! Available: "+p.qty;return;}p.qty-=q;sales.push({date:new Date().toLocaleString(),name:p.name,qty:q,price,total:q*price});saveData();e.target.reset();displayProducts();displaySales();updateDashboard();document.getElementById("salesMsg").textContent="Sale recorded and stock reduced!";};
+function displayPurchases(){let b=document.getElementById("purchaseList");b.innerHTML="";purchases.forEach(x=>{let tr=document.createElement("tr");[x.date,x.name,x.qty,"₹"+Number(x.cost).toFixed(2),"₹"+Number(x.total).toFixed(2)].forEach(v=>{let td=document.createElement("td");td.textContent=v;tr.appendChild(td);});b.appendChild(tr);});}
+function displaySales(){let b=document.getElementById("salesList");b.innerHTML="";sales.forEach(x=>{let tr=document.createElement("tr");[x.date,x.name,x.qty,"₹"+Number(x.price).toFixed(2),"₹"+Number(x.total).toFixed(2)].forEach(v=>{let td=document.createElement("td");td.textContent=v;tr.appendChild(td);});b.appendChild(tr);});}
+function updateDashboard(){document.getElementById("totalProducts").textContent="Total Products: "+products.length;document.getElementById("totalStock").textContent="Total Stock Units: "+products.reduce((a,p)=>a+p.qty,0);document.getElementById("stockValue").textContent="Stock Value: ₹"+products.reduce((a,p)=>a+p.qty*p.cost,0).toFixed(2);document.getElementById("totalSales").textContent="Total Sales: ₹"+sales.reduce((a,s)=>a+s.total,0).toFixed(2);document.getElementById("totalPurchases").textContent="Total Purchases: ₹"+purchases.reduce((a,p)=>a+p.total,0).toFixed(2);let low=document.getElementById("lowStock");low.innerHTML="";let items=products.filter(p=>p.qty<=p.low);if(!items.length)low.textContent="All products have sufficient stock.";items.forEach(p=>{let d=document.createElement("div");d.className="stat";d.textContent="⚠ "+p.name+" — Only "+p.qty+" left!";low.appendChild(d);});}
+displayProducts();displayPurchases();displaySales();updateDashboard();
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js")
+      .then(() => console.log("Glory Shop is ready!"))
+      .catch(error => console.log("Service Worker error:", error));
+  });
+}
+</script>
+</body>
+</html>

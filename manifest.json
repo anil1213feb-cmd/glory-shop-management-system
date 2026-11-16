@@ -1,0 +1,18 @@
+{
+  "name": "Glory Shop Management System",
+  "short_name": "Glory Shop",
+  "description": "Shop inventory, purchases and sales management",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#101B35",
+  "theme_color": "#101B35",
+  "icons": [
+    {
+      "src": "./icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
